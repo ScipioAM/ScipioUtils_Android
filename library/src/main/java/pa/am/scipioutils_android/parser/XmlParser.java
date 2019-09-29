@@ -6,23 +6,13 @@ import com.thoughtworks.xstream.core.util.QuickWriter;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.PrettyPrintWriter;
 import com.thoughtworks.xstream.io.xml.XppDriver;
-
-import org.dom4j.Document;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
-import org.dom4j.Element;
+import org.dom4j.*;
+import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
+import org.dom4j.io.XMLWriter;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Writer;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
+import java.io.*;
+import java.util.*;
 
 /**
  * Class: XmlUtil
@@ -176,40 +166,91 @@ public class XmlParser {
 
     /**
      * 从字符串里解析xml数据为键值对(利用dom4j框架)
-     * @return 解析得打的结果集(用map存放)
      */
-    public Map<String,Object> parseXmlToMap(String xml) throws IOException, DocumentException
+    public Document parseXml2Doc(String xml) throws IOException, DocumentException
     {
         return doParseXml(xml,XML_PARAM_STRING);
     }
 
     /**
      * 输入流里解析xml数据为键值对(利用dom4j框架)
-     * @return 解析得打的结果集(用map存放)
      */
-    public Map<String,Object> parseXmlStream2Map(InputStream in) throws IOException, DocumentException
+    public Document parseXmlStream2Doc(InputStream in) throws IOException, DocumentException
     {
         return doParseXml(in,XML_PARAM_STREAM);
     }
 
     /**
      * 从文件里解析xml数据为键值对(利用dom4j框架)
-     * @return 解析得到的结果集(用map存放)
      */
-    public Map<String,Object> parseXmlFile2Map(String filePath) throws IOException, DocumentException
+    public Document parseXmlFile2Doc(String filePath) throws IOException, DocumentException
     {
         return doParseXml(filePath,XML_PARAM_FILE_PATH);
     }
 
     /**
-     * 根据指定key从Xml中解析出对应数据
-     * @param xml 待解析的xml字符串数据
-     * @param key 指定的key
+     * 获取xml里指定的标签对象
+     * @param is 从输入流里读取xml数据
+     * @param name 指定的xml标签名称
      */
-    public Object getValueFromXml(String xml,String key) throws IOException, DocumentException
+    public List<Element> getElementsByName(InputStream is,String name) throws IOException, DocumentException
     {
-        Map<String,Object> xmlMap=parseXmlToMap(xml);
-        return xmlMap.get(key);
+        Document document=doParseXml(is,XML_PARAM_STREAM);
+        return getElementsByName(document,name);
+    }
+
+    /**
+     * 获取xml里指定的标签对象
+     * @param xml 从字符串里读取xml数据
+     * @param name 指定的xml标签名称
+     */
+    public List<Element> getElementsByName(String xml,String name) throws IOException, DocumentException
+    {
+        Document document=doParseXml(xml,XML_PARAM_STRING);
+        return getElementsByName(document,name);
+    }
+
+    /**
+     * 获取xml里指定的标签对象
+     * @param document 从Document对象里读取xml数据
+     * @param name 指定的xml标签名称
+     */
+    public List<Element> getElementsByName(Document document,String name)
+    {
+        List<Element> elementList=new ArrayList<>();
+        Element root=document.getRootElement();
+        if( root.getName().equals(name) )
+        {
+            elementList.add(root);
+        }
+        else
+        {
+            findAllElements(root,elementList,name);
+        }
+        return elementList;
+    }
+
+    /**
+     * 输出Document对象到本地文件
+     * @param document xml文档对象
+     * @param filePath 要输出的文件路径全名
+     * @param isPrettyPrint 是否输出为美化的格式（为false则输出紧凑格式）
+     */
+    public void writeDocument(Document document,String filePath,boolean isPrettyPrint) throws IOException
+    {
+        File file=new File(filePath);
+        if( !file.exists() || file.isDirectory() )
+            throw new IOException("File not found or is a directory path,which path is {"+filePath+"}");
+
+        OutputFormat format;
+        if(isPrettyPrint)
+            format=OutputFormat.createPrettyPrint();//美化格式
+        else
+            format=OutputFormat.createCompactFormat();//紧凑格式
+
+        XMLWriter writer=new XMLWriter(new FileOutputStream(filePath),format);
+        writer.write(document);
+        writer.close();
     }
 
     //----------------------------------------------------------------------
@@ -222,8 +263,7 @@ public class XmlParser {
      * @param xml 要解析的xml数据
      * @param xmlParamMode xml数据的模式
      */
-    @SuppressWarnings("unchecked")
-    private Map<String,Object> doParseXml(Object xml,int xmlParamMode) throws DocumentException, IOException
+    private Document doParseXml(Object xml,int xmlParamMode) throws DocumentException, IOException
     {
         Map<String,Object> result=new HashMap<>();
         Document document;
@@ -243,19 +283,32 @@ public class XmlParser {
             document=reader.read(new File((String) xml));
         }
 
-        Element root=document.getRootElement();//获取根节点
-        List<Element> list=root.elements();//根据根节点获取所有节点
-        for(Element e:list)//遍历，存入结果集
-        {
-            result.put(e.getName(), e.getData());
-        }
         if( xmlParamMode==XML_PARAM_STREAM )
         {
             InputStream in=(InputStream)xml;
             in.close();
             in=null;
         }
-        return result;
+        return document;
+    }
+
+    /**
+     * 递归遍历，查找所有指定的元素
+     * @param parentElement 父元素
+     * @param resultList 查找结果集
+     * @param name 要查找元素的名称
+     */
+    private void findAllElements(Element parentElement ,List<Element> resultList,String name)
+    {
+        List<Element> findList=parentElement.elements();
+        for( Element e : findList )
+        {
+            if(e.getName().equals(name))
+            {
+                resultList.add(e);
+            }
+            findAllElements(e,resultList,name);
+        }
     }
 
 }
