@@ -44,6 +44,4 @@ dependencies {
         exclude group: 'log4j',module:'log4j'
     }
 
-    //第三方Dialog
-    api 'com.github.f0ris.sweetalert:library:1.6.2'
 }

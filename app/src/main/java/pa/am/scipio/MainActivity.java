@@ -2,15 +2,15 @@ package pa.am.scipio;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.Manifest;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.Button;
 
-import com.sdsmdg.tastytoast.TastyToast;
+import com.google.android.material.snackbar.Snackbar;
 
-import pa.am.scipioutils_android.android.SweetDialogUtil;
+import pa.am.scipioutils_android.android.OriginalDialogUtil;
 import pa.am.scipioutils_android.android.SysApplication;
 import pa.am.scipioutils_android.android.permission.PermissionHelper;
 import pa.am.scipioutils_android.android.permission.PermissionInterface;
@@ -20,6 +20,7 @@ public class MainActivity extends AppCompatActivity implements PermissionInterfa
     private SysApplication application;
     private PermissionHelper permissionHelper;
 
+    private ConstraintLayout constraintLayout;
     private Button btn_request;
     private Button btn_sweetDialog;
 
@@ -38,25 +39,16 @@ public class MainActivity extends AppCompatActivity implements PermissionInterfa
         application=SysApplication.getInstance();
         application.addActivity(this);
         permissionHelper=new PermissionHelper(this,this);
+        constraintLayout=findViewById(R.id.activity_main_layout);
         btn_request=findViewById(R.id.btn_request);
         btn_sweetDialog=findViewById(R.id.btn_sweetDialog);
     }
 
     private void setOnClick()
     {
-        btn_request.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                permissionHelper.requestPermissions();
-            }
-        });
-        btn_sweetDialog.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                SweetDialogUtil.showWarningDialog(true,MainActivity.this,"测试",
-                        "这是测试内容","确定",null,null,null);
-            }
-        });
+        btn_request.setOnClickListener( (view)->permissionHelper.requestPermissions() );
+        btn_sweetDialog.setOnClickListener( view -> new OriginalDialogUtil().showSimpleDialog(MainActivity.this,"测试",
+                "这是测试内容","确定","取消",false) );
     }
 
     //==================================================================
@@ -82,11 +74,11 @@ public class MainActivity extends AppCompatActivity implements PermissionInterfa
 
     @Override
     public void requestPermissionsSuccess() {
-        TastyToast.makeText(this,"权限请求成功",TastyToast.LENGTH_SHORT,TastyToast.SUCCESS);
+        Snackbar.make(constraintLayout,"权限请求成功",Snackbar.LENGTH_LONG).show();
     }
 
     @Override
     public void requestPermissionsFail() {
-        TastyToast.makeText(this,"权限请求失败",TastyToast.LENGTH_SHORT,TastyToast.ERROR);
+        Snackbar.make(constraintLayout,"权限请求失败",Snackbar.LENGTH_LONG).show();
     }
 }
