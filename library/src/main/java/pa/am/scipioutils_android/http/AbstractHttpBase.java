@@ -3,15 +3,14 @@ package pa.am.scipioutils_android.http;
 import net.sf.jmimemagic.Magic;
 import net.sf.jmimemagic.MagicMatch;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.ConnectException;
-import java.net.InetSocketAddress;
-import java.net.Proxy;
-import java.net.SocketAddress;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
@@ -19,11 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import javax.net.ssl.HttpsURLConnection;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLSocketFactory;
-import javax.net.ssl.TrustManager;
 
 import pa.am.scipioutils_android.parser.StreamParser;
 
@@ -268,14 +262,18 @@ public abstract class AbstractHttpBase {
      * 设置http和https连接共通的部分
      * @param conn http或https连接对象
      * @param contentType 请求头的contentType
+     * @param requestMethod get请求还是post请求
      */
-    protected void setCommonConnectionData(URLConnection conn, String contentType)
+    protected void setCommonConnectionData(URLConnection conn, String contentType,String requestMethod)
             throws IOException {
         //设置共通的头信息，以及输出请求参数
         conn.setConnectTimeout(1000 * 10);//设置连接超时的时间(毫秒)
         conn.setReadTimeout(1000 * 60);
         conn.setDoInput(true);//设置连接打开输入流
-        conn.setDoOutput(true);//设置连接打开输出
+        if(requestMethod.equals(HttpConst.REQUEST_POST))
+        {
+            conn.setDoOutput(true);//设置连接打开输出
+        }
         conn.setRequestProperty("Accept-Encoding", "gzip,deflate");//告诉服务器支持gzip压缩
         conn.setRequestProperty("Accept-Charset", charset);
         conn.setRequestProperty("Charset", charset);

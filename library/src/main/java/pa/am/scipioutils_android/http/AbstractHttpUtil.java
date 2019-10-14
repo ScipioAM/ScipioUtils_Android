@@ -1,10 +1,7 @@
 package pa.am.scipioutils_android.http;
 
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import javax.net.ssl.HttpsURLConnection;
+import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -12,8 +9,6 @@ import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Class: HttpConnectionBase
@@ -104,7 +99,7 @@ public abstract class AbstractHttpUtil extends AbstractHttpBase {
             httpsConn.setRequestMethod(requestMethod);//设置连接方法
             httpsConn.setInstanceFollowRedirects(isFollowRedirects);//是否关闭重定向以获取跳转后的真实地址
             //公共的请求头设置
-            setCommonConnectionData(httpsConn,contentType);
+            setCommonConnectionData(httpsConn,contentType,requestMethod);
 
             //如果是非默认传参方式且为POST请求，则通过输出流输出参数
             if( requestMethod.equals(HttpConst.REQUEST_POST) && (paramsMode!=HttpConst.OUTDATA_NONE) )
@@ -129,7 +124,7 @@ public abstract class AbstractHttpUtil extends AbstractHttpBase {
             httpConn.setRequestMethod(requestMethod);//设置连接方法
             httpConn.setInstanceFollowRedirects(isFollowRedirects);//是否关闭重定向以获取跳转后的真实地址
             //公共设置
-            super.setCommonConnectionData(httpConn,contentType);
+            super.setCommonConnectionData(httpConn,contentType,requestMethod);
 
             //如果是非默认传参方式且为POST请求，则通过输出流输出参数
             if( requestMethod.equals(HttpConst.REQUEST_POST) && (paramsMode!=HttpConst.OUTDATA_NONE) )
@@ -210,7 +205,7 @@ public abstract class AbstractHttpUtil extends AbstractHttpBase {
             httpsConn.setRequestMethod(HttpConst.REQUEST_POST);
             httpsConn.setUseCaches(false);
             //公共的请求头设置
-            setCommonConnectionData(httpsConn,contentType);
+            setCommonConnectionData(httpsConn,contentType,HttpConst.REQUEST_POST);
 
             //文件上传开始时的回调
             if(uploadListener!=null)
