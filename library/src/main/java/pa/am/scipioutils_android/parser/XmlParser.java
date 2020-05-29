@@ -15,8 +15,8 @@ import java.io.*;
 import java.util.*;
 
 /**
- * Class: XmlUtil
- * Description: v1.1
+ * Class: XmlParser
+ * Description:
  *  xml解析
  *  需要依赖：XStream,dom4j
  * Author: Alan Min
@@ -121,6 +121,20 @@ public class XmlParser {
     }
 
     /**
+     * java对象转xml，同时设置别名（根标签名称）
+     * @param obj 要转换的java对象
+     * @param alias 别名（根标签名称）
+     * @param clazz 要转换java对象的类型
+     */
+    public String objectToXml(Object obj,String alias,Class clazz) {
+        XStream.setupDefaultSecurity(xstream);//XStream1.5之后移除了该方法
+        xstream.registerConverter(DATE_CONVERTER);
+        xstream.processAnnotations(obj.getClass());
+        setAlias(alias,clazz);
+        return xstream.toXML(obj);
+    }
+
+    /**
      * java对象转xml并输出到文件
      * @param obj 要转换的java对象
      * @param filePath 输出文件的全路径
@@ -133,6 +147,22 @@ public class XmlParser {
         // create target file
         FileOutputStream fileOutputStream = new FileOutputStream(new File(filePath));
         // output
+        xstream.toXML(obj, fileOutputStream);
+    }
+
+    /**
+     * java对象转xml并输出到文件
+     * @param obj 要转换的java对象
+     * @param filePath 输出文件的全路径
+     * @param alias 别名（根标签名称）
+     * @param clazz 要转换的java对象的类型
+     */
+    public void objectToXmlFile(Object obj, String filePath,String alias,Class clazz) throws FileNotFoundException {
+        XStream.setupDefaultSecurity(xstream);//XStream1.5之后移除了该方法
+        xstream.registerConverter(DATE_CONVERTER);
+        xstream.processAnnotations(obj.getClass());
+        FileOutputStream fileOutputStream = new FileOutputStream(new File(filePath));
+        setAlias(alias,clazz);
         xstream.toXML(obj, fileOutputStream);
     }
 
@@ -150,16 +180,18 @@ public class XmlParser {
         return xstream;
     }
 
-    public void setXStream(XStream xstream) {
+    public XmlParser setXStream(XStream xstream) {
         this.xstream = xstream;
+        return this;
     }
 
     public boolean isSetCDATA() {
         return isSetCDATA;
     }
 
-    public void setCDATA(boolean setCDATA) {
+    public XmlParser setCDATA(boolean setCDATA) {
         isSetCDATA = setCDATA;
+        return this;
     }
 
     //----------------------------------------------------------------------
@@ -186,6 +218,44 @@ public class XmlParser {
     public Document parseXmlFile2Doc(String filePath) throws IOException, DocumentException
     {
         return doParseXml(filePath,XML_PARAM_FILE_PATH);
+    }
+
+    /**
+     * 解析xml文档并以键值对的形式存放
+     * @param document dom4j的xml文档对象
+     * @return 解析结果集：key为标签名，value为找到的该名称的标签列表
+     */
+    public Map<String,List<Element>> parseXml(Document document)
+    {
+        Map<String,List<Element>> resultMap=new HashMap<>();
+        //存入根标签
+        Element rootElement=document.getRootElement();
+        List<Element> rootList=new ArrayList<>();
+        rootList.add(rootElement);
+        resultMap.put(rootElement.getName(),rootList);
+        //存入其他所有标签
+        findAllElements(document.getRootElement(),resultMap);
+        return resultMap;
+    }
+
+    /**
+     * 解析xml文档并以键值对的形式存放
+     * @param filePath xml文件的全路径
+     */
+    public Map<String,List<Element>> parseXml(String filePath) throws IOException, DocumentException
+    {
+        Document document=doParseXml(filePath,XML_PARAM_FILE_PATH);
+        return parseXml(document);
+    }
+
+    /**
+     * 解析xml文档并以键值对的形式存放
+     * @param is 以输入流形式存在的xml文档
+     */
+    public Map<String,List<Element>> parseXml(InputStream is) throws IOException, DocumentException
+    {
+        Document document=doParseXml(is,XML_PARAM_STREAM);
+        return parseXml(document);
     }
 
     /**
@@ -265,7 +335,6 @@ public class XmlParser {
      */
     private Document doParseXml(Object xml,int xmlParamMode) throws DocumentException, IOException
     {
-        Map<String,Object> result=new HashMap<>();
         Document document;
         SAXReader reader;
         if(xmlParamMode==XML_PARAM_STRING)
@@ -283,7 +352,7 @@ public class XmlParser {
             document=reader.read(new File((String) xml));
         }
 
-        if( xmlParamMode==XML_PARAM_STREAM )
+        if( xmlParamMode==XML_PARAM_STREAM )//读完xml，反手关闭输入流
         {
             InputStream in=(InputStream)xml;
             in.close();
@@ -293,21 +362,59 @@ public class XmlParser {
     }
 
     /**
-     * 递归遍历，查找所有指定的元素
+     * 递归遍历，查找所有（指定的）元素
      * @param parentElement 父元素
      * @param resultList 查找结果集
-     * @param name 要查找元素的名称
+     * @param name 要查找元素的名称(为null则获取父元素下的所有子元素)
      */
     private void findAllElements(Element parentElement ,List<Element> resultList,String name)
     {
-        List<Element> findList=parentElement.elements();
-        for( Element e : findList )
+        if(resultList==null)
         {
-            if(e.getName().equals(name))
+            resultList=new ArrayList<>();
+        }
+
+        List<Element> childList=parentElement.elements();
+        for( Element e : childList )
+        {
+            if( name!=null && !"".equals(name))//如果需要查找指定标签
+            {
+                if(e.getName().equals(name))
+                {
+                    resultList.add(e);
+                }
+            }
+            else//不需要查找指定标签，查找全部标签
             {
                 resultList.add(e);
             }
             findAllElements(e,resultList,name);
+        }//end of for
+    }//end of findAllElements()
+
+    private void findAllElements(Element parentElement,Map<String,List<Element>> resultMap)
+    {
+        if(resultMap==null)
+        {
+            resultMap=new HashMap<>();
+        }
+
+        List<Element> childList=parentElement.elements();
+        for( Element e : childList )
+        {
+            String key=e.getName();//获取标签名称
+            List<Element> valueList=resultMap.get(key);//获取该标签的列表
+            if(valueList==null)//第一次找到该标签
+            {
+                valueList=new ArrayList<>();
+                valueList.add(e);
+                resultMap.put(key,valueList);//加入到结果集里
+            }
+            else//不是第一次找到该标签
+            {
+                valueList.add(e);
+            }
+            findAllElements(e,resultMap);//递归调用查找
         }
     }
 

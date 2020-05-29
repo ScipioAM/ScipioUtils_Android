@@ -11,17 +11,6 @@ import java.util.List;
  */
 public class SysApplication extends Application {
     private List<Activity> mList = new LinkedList<>();
-    private static SysApplication instance;
-
-    public SysApplication() {
-    }
-
-    public synchronized static SysApplication getInstance() {
-        if (null == instance) {
-            instance = new SysApplication();
-        }
-        return instance;
-    }
 
     // add Activity
     public void addActivity(Activity activity) {

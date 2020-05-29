@@ -9,7 +9,7 @@ import java.security.NoSuchAlgorithmException;
  * Author: Alan Min
  * Createtime: 2018/6/1
  */
-public class MyMessageDigest extends AbstractCryptUtil {
+public class MyMessageDigest extends AbstractEncryptUtil {
 
     /**
      * 加盐

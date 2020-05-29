@@ -8,7 +8,7 @@ import java.util.Random;
  * Author: Alan Min
  * Createtime: 2018/6/1
  */
-public abstract class AbstractCryptUtil {
+public abstract class AbstractEncryptUtil {
 
     //******************* 字符集 *******************
     public static final String CHARSET_UTF8="utf-8";
@@ -67,17 +67,17 @@ public abstract class AbstractCryptUtil {
      */
     protected String byte2HexByBitwise(byte[] bytes)
     {
-        char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        final char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
-        char chars[] = new char[16 * 2]; // 每个字节用 16 进制表示的话，使用两个字符
-        int k = 0; // 表示转换结果中对应的字符位置
-        for (int i = 0; i < 16; i++)// 从第一个字节开始，对每一个字节,转换成 16 进制字符的转换
+        StringBuilder sb=new StringBuilder();
+        for ( byte b : bytes )// 从第一个字节开始，对每一个字节,转换成 16 进制字符的转换
         {
-            byte byte0 = bytes[i]; // 取第 i 个字节
-            chars[k++] = hexDigits[byte0 >>> 4 & 0xf]; // 取字节中高 4 位的数字转换, >>> 为逻辑右移，将符号位一起右移
-            chars[k++] = hexDigits[byte0 & 0xf]; // 取字节中低 4 位的数字转换
+            char[] tempArr = new char[2];
+            tempArr[0] = hexDigits[(b >>> 4) & 15];// 取字节中高 4 位的数字转换, >>> 为逻辑右移，将符号位一起右移
+            tempArr[1] = hexDigits[b & 15];// 取字节中低 4 位的数字转换
+            sb.append(tempArr);
         }
-        return new String(chars);
+        return sb.toString();
     }
 
     //---------------------------------------------------------------------------------

@@ -1,17 +1,11 @@
 package pa.am.scipioutils_android.codec;
 
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
-import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 /**
  * Class: SymmetricCrypt
@@ -19,9 +13,9 @@ import javax.crypto.spec.SecretKeySpec;
  * Author: Alan Min
  * Createtime: 2018/6/1
  */
-public class SymmetricCrypt extends AbstractCryptUtil {
+public class SymmetricEncrypt extends AbstractEncryptUtil {
 
-    protected SecretKey originalKey;
+    protected String finalKey;
 
     /**
      * 核心实现方法
@@ -40,9 +34,9 @@ public class SymmetricCrypt extends AbstractCryptUtil {
 
         String result;
         //获取原始密钥
-        SecretKey original_key =getOriginalKey(isRandomKey,algorithm,key);
+        SecretKey original_key =generateOriginalKey(isRandomKey,algorithm,key);
         //生成最终密钥
-        SecretKey final_key=new SecretKeySpec(original_key.getEncoded(), algorithm);
+        SecretKeySpec final_key=new SecretKeySpec(original_key.getEncoded(), algorithm);
         //根据密钥生成密码器
         Cipher cipher=Cipher.getInstance(algorithm);
         //初始化密码器
@@ -65,29 +59,25 @@ public class SymmetricCrypt extends AbstractCryptUtil {
         return result;
     }
 
-    //获取原始密钥
-    private SecretKey getOriginalKey(boolean isRandomKey,String algorithm,String key)
-            throws NoSuchAlgorithmException
-    {
-        if(this.originalKey==null)
-            this.originalKey=generateOriginalKey(isRandomKey,algorithm,key);
-        return this.originalKey;
-    }
-
     //生成原始密钥
     private SecretKey generateOriginalKey(boolean isRandomKey,String algorithm,String key)
             throws NoSuchAlgorithmException
     {
         String rule;
-        if(isRandomKey)//动态生成规则
+        if(isRandomKey){//动态生成规则
             rule=getSaltContent(key,false,false);
-        else//静态生成规则
-            rule=getSaltContent(key,true,true);//每个字符间插入固定字符，但有层for循环
+        }
+        else {//静态生成规则
+            rule = getSaltContent(key, true, true);//每个字符间插入固定字符，但有层for循环
             //rule=key+"Q1cA@3>";//直接后面加一串固定字符串
-        KeyGenerator keygen=KeyGenerator.getInstance(algorithm);//构造构造密钥生成器
-        SecureRandom secureRandom=new SecureRandom();
-        secureRandom.setSeed(rule.getBytes());
+        }
+        //留一个备份，避免随机密钥不能解回去
+        if(finalKey==null || finalKey.equals("") || !finalKey.equals(rule)){
+            finalKey=rule;
+        }
 
+        KeyGenerator keygen=KeyGenerator.getInstance(algorithm);//构造构造密钥生成器
+        SecureRandom secureRandom=new SecureRandom(rule.getBytes());
         //初始化密钥生成器
         switch (algorithm)
         {
@@ -100,6 +90,7 @@ public class SymmetricCrypt extends AbstractCryptUtil {
             default:
                 throw new RuntimeException("Error:the param [algorithm] is illegal");
         }
+        //生成密钥
         return keygen.generateKey();
     }
 

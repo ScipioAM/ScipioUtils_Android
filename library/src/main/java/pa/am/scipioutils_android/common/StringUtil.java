@@ -9,9 +9,9 @@ import java.util.regex.Pattern;
  * Author: Alan Min
  * Createtime: 2018/4/20
  */
-public class CommonUtil {
+public class StringUtil {
 
-    private CommonUtil(){}
+    private StringUtil(){}
 
     /*判断字符串是否不为空*/
     public static Boolean isNotNull(String s)
