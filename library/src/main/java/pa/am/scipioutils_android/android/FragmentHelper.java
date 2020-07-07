@@ -48,6 +48,10 @@ public class FragmentHelper {
         transaction.commit();
     }
 
+    public Fragment getCurrentFragment() {
+        return currentFragment;
+    }
+
     /**
      * Fragment与Activity交流的监听器，由Activity实现，Fragment调用
      */

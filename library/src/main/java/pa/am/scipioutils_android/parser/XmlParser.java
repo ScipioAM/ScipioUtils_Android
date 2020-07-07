@@ -20,7 +20,7 @@ import java.util.*;
  *  xml解析
  *  需要依赖：XStream,dom4j
  * Author: Alan Min
- * Createtime: 2018/5/16
+ * Create Time: 2018/5/16
  */
 public class XmlParser {
 
@@ -97,7 +97,7 @@ public class XmlParser {
     @SuppressWarnings("unchecked")
     public <T> T xmlFileToObject(String filePath, Class<T> clazz) {
         //XStream1.5之后移除了该方法
-        XStream.setupDefaultSecurity(xstream);
+//        XStream.setupDefaultSecurity(xstream);
         //XStream的安全设置之二
         xstream.allowTypeHierarchy(clazz);
         // 注册日期转换器

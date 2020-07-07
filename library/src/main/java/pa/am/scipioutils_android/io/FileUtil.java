@@ -1,16 +1,6 @@
 package pa.am.scipioutils_android.io;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.channels.FileChannel;
 
 import pa.am.scipioutils_android.http.HttpConst;
@@ -256,6 +246,39 @@ public class FileUtil {
             return false;
         }
         return true;
+    }
+
+    /**
+     * 根据文件地址和给定的输出流，将本地文件输出
+     * @param filePath 本地文件地址
+     * @param os 输出流
+     */
+    public static void outPutLocalFile(String filePath,OutputStream os)
+    {
+        File imageFile = new File(filePath);//获取本地文件对象
+        if (imageFile.exists()) { //检查这个文件是否存在
+            FileInputStream fis = null;
+            try {
+                fis = new FileInputStream(imageFile);//打开本地文件输入流，也就是开始读取本地文件
+                int count;
+                byte[] buffer = new byte[1024 * 8];//每次读取的缓冲区，其大小决定了读取速度
+                while ((count = fis.read(buffer)) != -1) {  //read()方法
+                    os.write(buffer, 0, count);//把读出的每一块，向客户端输出
+                    os.flush();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                try {
+                    if(fis!=null)//写完了不等于本身是null
+                        fis.close();
+                    if(os!=null)
+                        os.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }//end of finally
+        }//end of if
     }
 
 }
